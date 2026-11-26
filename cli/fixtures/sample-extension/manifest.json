@@ -1,0 +1,21 @@
+{
+  // Chrome allows comments in manifest.json; ext-localize handles them.
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "short_name": "__MSG_extShortName__",
+  "description": "__MSG_extDescription__",
+  "version": "1.4.0",
+  "default_locale": "en",
+  "action": {
+    "default_title": "__MSG_actionTitle__",
+    "default_popup": "popup.html"
+  },
+  "background": { "service_worker": "background.js" },
+  "permissions": ["tabs", "storage", "contextMenus"],
+  "commands": {
+    "save-session": {
+      "suggested_key": { "default": "Ctrl+Shift+S" },
+      "description": "__MSG_commandSaveSession__"
+    }
+  }
+}

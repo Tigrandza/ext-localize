@@ -1,0 +1,10 @@
+{
+  "keep": ["TabNest", "Chrome", "Pro"],
+  "terms": {
+    "workspace": {
+      "de": "Arbeitsbereich",
+      "fr": "espace de travail",
+      "es": "espacio de trabajo"
+    }
+  }
+}

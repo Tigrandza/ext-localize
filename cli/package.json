@@ -1,0 +1,66 @@
+{
+  "name": "ext-localize",
+  "version": "0.3.0",
+  "description": "Local-first CLI to translate, validate and deliver Chrome (MV3) extension _locales and store listings (Chrome, Firefox, Edge).",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tigrandza/ext-localize.git",
+    "directory": "cli"
+  },
+  "homepage": "https://github.com/Tigrandza/ext-localize/tree/main/cli#readme",
+  "bugs": {
+    "url": "https://github.com/Tigrandza/ext-localize/issues"
+  },
+  "type": "module",
+  "bin": {
+    "ext-localize": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "dev": "node src/cli.ts",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "chrome-extension",
+    "i18n",
+    "l10n",
+    "localization",
+    "messages.json",
+    "translate",
+    "_locales",
+    "manifest-v3",
+    "firefox-addons",
+    "store-listing",
+    "chrome-web-store"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0"
+  },
+  "peerDependencies": {
+    "playwright-core": ">=1.40.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright-core": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "playwright-core": "^1.65.1",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,15 @@
+# Dependencies and builds
+node_modules/
+cli/dist/
+**/dist/
+*.tgz
+
+# Local outputs that can hold listing text, session tokens or cookies
+**/.localizer/out/
+*.har
+*.zip
+
+# Secrets and OS files
+.env
+.env.*
+.DS_Store

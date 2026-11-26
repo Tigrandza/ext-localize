@@ -1,0 +1,144 @@
+name: ext-localize
+description: Check and translate the _locales of a Chrome extension. Fails on broken or stale locales, and opens a PR with new translations.
+author: ext-localize
+branding:
+  icon: globe
+  color: blue
+
+inputs:
+  mode:
+    description: '"check" (default) validates every locale. "translate" translates new and changed strings and opens or updates a pull request.'
+    required: false
+    default: check
+  path:
+    description: Extension folder (the one with manifest.json), relative to the repository root.
+    required: false
+    default: .
+  stale:
+    description: 'check mode. What to do when a translation is older than its source text: "fail" (default), "warn" or "ignore".'
+    required: false
+    default: fail
+  strict:
+    description: check mode. "true" also fails on warnings.
+    required: false
+    default: "false"
+  annotations:
+    description: check mode. "true" (default) adds error and warning annotations to the files.
+    required: false
+    default: "true"
+  store:
+    description: 'Stores whose listing length limits apply, for example "chrome,firefox". Default: "stores" in .localizer/config.json, else chrome.'
+    required: false
+    default: ""
+  provider:
+    description: 'translate mode. anthropic, openai, deepl or ollama. Default: "provider" in .localizer/config.json. Pass the key as step env (for example DEEPL_API_KEY), never as an input.'
+    required: false
+    default: ""
+  to:
+    description: 'translate mode. Target locales, for example "de,fr,pt-BR" or "all". Default: the locale folders that already exist.'
+    required: false
+    default: ""
+  model:
+    description: translate mode. Model id. Required for openai and ollama.
+    required: false
+    default: ""
+  formality:
+    description: 'translate mode. default, more, less, prefer_more or prefer_less.'
+    required: false
+    default: ""
+  dry-run:
+    description: translate mode. "true" only shows what would be translated. No API calls, no commit, no PR.
+    required: false
+    default: "false"
+  listing:
+    description: 'translate mode. "true" also translates the store listing (listing/<locale>.json) after the messages, in the same PR.'
+    required: false
+    default: "false"
+  branch:
+    description: translate mode. Branch the Action owns and force-pushes. Never the default branch.
+    required: false
+    default: ext-localize/translations
+  base:
+    description: 'translate mode. Base branch of the PR. Default: the repository default branch.'
+    required: false
+    default: ""
+  pr-title:
+    description: translate mode. Title of the pull request.
+    required: false
+    default: Update translations (ext-localize)
+  github-token:
+    description: 'translate mode. Token for git push and gh. Needs contents: write and pull-requests: write. Use a PAT or app token if the PR must trigger other workflows.'
+    required: false
+    default: ${{ github.token }}
+  cli-source:
+    description: '"npm" (default) runs npx ext-localize@<cli-version>. "bundled" runs the cli/ folder from the same commit as this Action. A path (relative to the repository root) runs a local copy of the CLI.'
+    required: false
+    default: npm
+  cli-version:
+    description: Version of ext-localize from npm. Used when cli-source is "npm". Needs 0.2.0 or newer.
+    required: false
+    default: 0.3.0
+  node-version:
+    description: Node.js version to set up with actions/setup-node. Empty uses the Node that is already on the runner (needs 20+, or 22.18+ for a local .ts CLI).
+    required: false
+    default: "24"
+
+outputs:
+  result:
+    description: 'pass, fail, partial (translate: some strings failed), no-targets, dry-run, pr-blocked (branch pushed, GitHub did not allow the PR) or error.'
+    value: ${{ steps.run.outputs.result }}
+  errors:
+    description: check mode. Number of errors.
+    value: ${{ steps.run.outputs.errors }}
+  warnings:
+    description: check mode. Number of warnings.
+    value: ${{ steps.run.outputs.warnings }}
+  stale:
+    description: check mode. Number of stale strings (empty when it could not be checked).
+    value: ${{ steps.run.outputs.stale }}
+  changed:
+    description: translate mode. "true" when translations were committed.
+    value: ${{ steps.run.outputs.changed }}
+  pr-url:
+    description: translate mode. URL of the created or updated pull request.
+    value: ${{ steps.run.outputs.pr-url }}
+  pr-number:
+    description: translate mode. Number of the pull request.
+    value: ${{ steps.run.outputs.pr-number }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      if: inputs.node-version != ''
+      uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Run ext-localize
+      id: run
+      shell: bash
+      # Inputs go in through env, never into the script text, so a value
+      # cannot inject shell code. Provider keys come from the caller's step env.
+      env:
+        INPUT_MODE: ${{ inputs.mode }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_STALE: ${{ inputs.stale }}
+        INPUT_STRICT: ${{ inputs.strict }}
+        INPUT_ANNOTATIONS: ${{ inputs.annotations }}
+        INPUT_STORE: ${{ inputs.store }}
+        INPUT_PROVIDER: ${{ inputs.provider }}
+        INPUT_TO: ${{ inputs.to }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_FORMALITY: ${{ inputs.formality }}
+        INPUT_DRY_RUN: ${{ inputs.dry-run }}
+        INPUT_LISTING: ${{ inputs.listing }}
+        INPUT_BRANCH: ${{ inputs.branch }}
+        INPUT_BASE: ${{ inputs.base }}
+        INPUT_PR_TITLE: ${{ inputs.pr-title }}
+        INPUT_CLI_SOURCE: ${{ inputs.cli-source }}
+        INPUT_CLI_VERSION: ${{ inputs.cli-version }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        GH_REPO: ${{ github.repository }}
+      run: node "$GITHUB_ACTION_PATH/scripts/main.mjs"

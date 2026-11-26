@@ -1,0 +1,25 @@
+# Check the locales on every push and pull request.
+# Copy to .github/workflows/locales.yml in your extension repo.
+# Pin the ref after @ to a release tag, or better a full commit SHA.
+name: Locales
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: Tigrandza/ext-localize/action@v0.3.0
+        with:
+          cli-source: bundled   # until ext-localize is on npm; then remove this line
+          path: .            # folder with manifest.json
+          stale: fail        # or "warn" while you catch up

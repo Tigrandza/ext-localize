@@ -1,0 +1,140 @@
+{
+  "extName": {
+    "message": "TabNest – Tab Manager & Session Saver",
+    "description": "Extension name shown in the Chrome Web Store and on the extensions page. Max 75 characters. Keep the brand name TabNest."
+  },
+  "extShortName": {
+    "message": "TabNest",
+    "description": "Short name shown under the toolbar icon. Max 12 characters."
+  },
+  "extDescription": {
+    "message": "Save, group and restore your tabs in one click. Free up memory and never lose a session again.",
+    "description": "Store description. Max 132 characters."
+  },
+  "actionTitle": {
+    "message": "Open TabNest",
+    "description": "Tooltip on the toolbar button."
+  },
+  "commandSaveSession": {
+    "message": "Save all open tabs as a session",
+    "description": "Keyboard shortcut description on chrome://extensions/shortcuts."
+  },
+  "popupSearchPlaceholder": {
+    "message": "Search tabs and sessions…",
+    "description": "Placeholder text in the search box at the top of the popup."
+  },
+  "buttonSaveSession": {
+    "message": "Save session",
+    "description": "Button label. A session is a saved set of tabs."
+  },
+  "buttonRestore": {
+    "message": "Restore",
+    "description": "Button label. Opens all tabs of a saved session again."
+  },
+  "buttonDelete": {
+    "message": "Delete",
+    "description": "Button label. Deletes a saved session."
+  },
+  "sessionSaved": {
+    "message": "Saved $count$ tabs to \"$session_name$\".",
+    "description": "Toast shown after saving. count is a number, session_name is the name the user gave.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      },
+      "session_name": {
+        "content": "$2",
+        "example": "Research"
+      }
+    }
+  },
+  "sessionRestoreConfirm": {
+    "message": "Restore $count$ tabs from $session_name$? Your current window stays open.",
+    "description": "Confirmation dialog before restoring a session.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "8"
+      },
+      "session_name": {
+        "content": "$2",
+        "example": "Work"
+      }
+    }
+  },
+  "lastSaved": {
+    "message": "Last saved: $1",
+    "description": "Small grey text under a session. $1 is a relative time like \"5 minutes ago\"."
+  },
+  "memoryFreed": {
+    "message": "You freed about $MEGABYTES$ MB of memory today.",
+    "description": "Stats line in the popup footer.",
+    "placeholders": {
+      "megabytes": {
+        "content": "$1",
+        "example": "640"
+      }
+    }
+  },
+  "workspaceCreate": {
+    "message": "Create workspace",
+    "description": "Menu item. A workspace is a named group of sessions."
+  },
+  "workspaceEmpty": {
+    "message": "This workspace is empty. Drag a session here to add it.",
+    "description": "Empty state text inside a workspace."
+  },
+  "proPrice": {
+    "message": "Upgrade to Pro for $$4.99 per month",
+    "description": "Upsell button. $$ is a literal dollar sign. Keep the price and currency as is."
+  },
+  "proPriceYearly": {
+    "message": "Or $$39 per year – save $percent$%",
+    "description": "Second line under the upsell button.",
+    "placeholders": {
+      "percent": {
+        "content": "$1",
+        "example": "35"
+      }
+    }
+  },
+  "contextMenuSaveTab": {
+    "message": "Save this tab to TabNest",
+    "description": "Right-click menu item on a page."
+  },
+  "contextMenuSaveAll": {
+    "message": "Save all tabs in this window",
+    "description": "Right-click menu item on a page."
+  },
+  "settingsTitle": {
+    "message": "Settings",
+    "description": "Title of the options page."
+  },
+  "settingsAutoSave": {
+    "message": "Save my tabs automatically every $minutes$ minutes",
+    "description": "Checkbox label on the options page.",
+    "placeholders": {
+      "minutes": {
+        "content": "$1",
+        "example": "15"
+      }
+    }
+  },
+  "settingsSync": {
+    "message": "Sync sessions across devices with your Chrome account",
+    "description": "Checkbox label. Uses chrome.storage.sync."
+  },
+  "errorQuota": {
+    "message": "Sync storage is full ($1 of $2 KB used). Delete old sessions to keep syncing.",
+    "description": "Error banner. $1 and $2 are numbers."
+  },
+  "onboardingWelcome": {
+    "message": "Welcome to TabNest!\nPin the icon to your toolbar to get started.",
+    "description": "First-run screen. Keep the line break."
+  },
+  "tabsCount": {
+    "message": "$1 tabs",
+    "description": "Counter next to a session name, like \"12 tabs\"."
+  }
+}

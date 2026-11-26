@@ -1,0 +1,45 @@
+# Translate new and changed strings and open (or update) one pull request.
+# Runs by hand from the Actions tab, and when the source messages change on main.
+# Copy to .github/workflows/translate.yml in your extension repo.
+# Pin the ref after @ to a release tag, or better a full commit SHA.
+#
+# Required: Settings > Actions > General > Workflow permissions >
+# "Allow GitHub Actions to create and approve pull requests". It is off by default.
+# While it is off, the branch is pushed but the job fails with result "pr-blocked".
+name: Translate
+
+on:
+  workflow_dispatch:
+    inputs:
+      to:
+        description: 'Target locales, for example "de,fr,ja" or "all". Empty: the folders that already exist.'
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths:
+      - "_locales/en/messages.json"   # your default locale
+
+permissions:
+  contents: write        # push the bot branch
+  pull-requests: write   # open or update the PR
+
+# Two runs at once would race on the same branch.
+concurrency:
+  group: ext-localize-translate
+  cancel-in-progress: false
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: Tigrandza/ext-localize/action@v0.3.0
+        with:
+          cli-source: bundled   # until ext-localize is on npm; then remove this line
+          mode: translate
+          provider: deepl
+          to: ${{ inputs.to }}
+        env:
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Strict CSP + Trusted Types, like Google pages: no inline scripts, no eval from page code. -->
+<meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; require-trusted-types-for 'script'">
+<title>Mock CWS Store Listing</title>
+<!--
+  Local mock of the Chrome Web Store dashboard "Store listing" tab.
+  It is NOT a copy of the real page. It copies only the parts that make
+  automation hard:
+    - React-controlled textarea (a plain `el.value = x` is lost on re-render)
+    - custom language dropdown (not a <select>), list mounted in a portal only when open
+    - textarea is unmounted while the new language "loads" (delay)
+  URL options:
+    ?markup=brief  selectors from the brief (ul[aria-label='Language'] li[data-value], textarea[maxlength='16000'])
+    ?markup=aria   no data-value, no maxlength; only labels, roles and visible language names
+    ?switch=keep   unsaved text for other languages is kept when you switch (one Save saves all)
+    ?switch=drop   unsaved text is thrown away when you switch (you must Save each language)
+    ?delay=350     ms the textarea is gone after a language switch
+  Strict CSP (script-src 'self') and Trusted Types are on, like Google pages.
+  Tests read window.__mockState (what "Save draft" would really send), not the DOM.
+-->
+<style>
+  :root { --bg:#fff; --fg:#202124; --muted:#5f6368; --line:#dadce0; --accent:#1a73e8; --panel:#f8f9fa; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#202124; --fg:#e8eaed; --muted:#9aa0a6; --line:#3c4043; --accent:#8ab4f8; --panel:#292a2d; } }
+  body { margin:0; font:14px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:900px; margin:0 auto; padding:16px; }
+  .banner { background:var(--panel); border:1px dashed var(--line); padding:8px 12px; margin-bottom:16px; color:var(--muted); }
+  .field { margin:16px 0; }
+  .field-label, label { display:block; font-weight:600; margin-bottom:4px; }
+  .lang-trigger { display:inline-block; min-width:220px; padding:8px 12px; border:1px solid var(--line); border-radius:4px; cursor:pointer; user-select:none; }
+  .lang-list { position:absolute; z-index:10; list-style:none; margin:0; padding:4px 0; background:var(--bg); border:1px solid var(--line); border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,.2); min-width:220px; }
+  .lang-list [role=option] { padding:6px 12px; cursor:pointer; }
+  .lang-list [role=option]:hover { background:var(--panel); }
+  textarea { width:100%; box-sizing:border-box; min-height:180px; font:inherit; padding:8px; border:1px solid var(--line); border-radius:4px; background:var(--bg); color:var(--fg); }
+  .loading { padding:40px; text-align:center; color:var(--muted); border:1px solid var(--line); border-radius:4px; }
+  .actions { display:flex; gap:8px; margin:16px 0; }
+  button { padding:8px 16px; border-radius:4px; border:1px solid var(--line); background:var(--bg); color:var(--fg); cursor:pointer; font:inherit; }
+  button.primary { background:var(--accent); color:var(--bg); border-color:var(--accent); }
+  pre { background:var(--panel); padding:8px; overflow:auto; white-space:pre-wrap; word-break:break-word; font-size:12px; }
+  .counter { color:var(--muted); font-size:12px; text-align:right; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="vendor/react.development.js"></script>
+<script src="vendor/react-dom.development.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

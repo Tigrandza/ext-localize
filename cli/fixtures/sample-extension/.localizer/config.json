@@ -1,0 +1,4 @@
+{
+  "stores": ["chrome", "firefox"],
+  "firefox": { "addon": "tabnest" }
+}

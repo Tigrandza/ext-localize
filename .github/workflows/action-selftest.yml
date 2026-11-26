@@ -1,0 +1,169 @@
+# Runs the Action from this repository on a real GitHub runner.
+# It uses the Action the way an extension repo would (owner/repo/action@ref),
+# so it also checks that cli-source "bundled" finds the cli/ folder.
+# No paid API is called: translate uses a local fake OpenAI server.
+name: Action self-test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "action/**"
+      - "cli/**"
+      - ".github/selftest/**"
+      - ".github/workflows/action-selftest.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  # The npm package says it runs on Node 20+. Install the packed tarball on
+  # each supported major and run it, the way a user would after npm install.
+  cli-package:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20", "22", "24"]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Build and pack
+        working-directory: cli
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          npm pack --silent > ../tarball-name.txt
+
+      - name: Install the tarball and run it
+        run: |
+          npm install -g "./cli/$(cat tarball-name.txt)" --no-audit --no-fund
+          node --version
+          ext-localize --help > /dev/null
+          ext-localize check --dir cli/fixtures/sample-extension --store chrome,firefox
+          ext-localize translate --dir cli/fixtures/sample-extension --provider ollama --model test --to de,ja --dry-run
+          ext-localize push firefox --dir cli/fixtures/sample-extension --addon test-addon > /dev/null
+          ext-localize push chrome --dir cli/fixtures/sample-extension > /dev/null
+
+  check-clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - id: localize
+        uses: Tigrandza/ext-localize/action@main
+        with:
+          cli-source: bundled
+          path: cli/fixtures/sample-extension
+          stale: fail
+
+      - name: Expect a clean result
+        env:
+          RESULT: ${{ steps.localize.outputs.result }}
+          ERRORS: ${{ steps.localize.outputs.errors }}
+        run: |
+          echo "result=$RESULT errors=$ERRORS"
+          test "$ERRORS" = "0"
+
+  # Default cli-source (npm): runs the published ext-localize package.
+  check-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - id: localize
+        uses: Tigrandza/ext-localize/action@main
+        with:
+          path: cli/fixtures/sample-extension
+          stale: fail
+
+      - name: Expect a clean result
+        env:
+          ERRORS: ${{ steps.localize.outputs.errors }}
+        run: |
+          echo "errors=$ERRORS"
+          test "$ERRORS" = "0"
+
+  check-broken:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Break one locale on purpose
+        run: |
+          mkdir -p cli/fixtures/sample-extension/_locales/de
+          printf '{ "extName": { "message": "Kaputt" ' > cli/fixtures/sample-extension/_locales/de/messages.json
+
+      - id: localize
+        continue-on-error: true
+        uses: Tigrandza/ext-localize/action@main
+        with:
+          cli-source: bundled
+          path: cli/fixtures/sample-extension
+
+      - name: Expect the Action to fail
+        env:
+          OUTCOME: ${{ steps.localize.outcome }}
+          ERRORS: ${{ steps.localize.outputs.errors }}
+        run: |
+          echo "outcome=$OUTCOME errors=$ERRORS"
+          test "$OUTCOME" = "failure"
+
+  translate-pr:
+    # Opens a real PR, so only when started by hand (Actions tab, "Run workflow").
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: action-selftest-translate
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Start the fake OpenAI server
+        run: |
+          node .github/selftest/fake-openai.mjs 8787 > fake-openai.log 2>&1 &
+          for i in $(seq 1 20); do curl -s -o /dev/null http://127.0.0.1:8787/ && break; sleep 0.5; done
+
+      - id: localize
+        uses: Tigrandza/ext-localize/action@main
+        with:
+          cli-source: bundled
+          mode: translate
+          path: cli/fixtures/sample-extension
+          provider: openai
+          model: fake-model
+          to: de,fr
+          branch: selftest/ext-localize
+        env:
+          OPENAI_API_KEY: not-a-real-key
+          OPENAI_BASE_URL: http://127.0.0.1:8787/v1
+
+      - name: Show outputs
+        if: always()
+        env:
+          RESULT: ${{ steps.localize.outputs.result }}
+          CHANGED: ${{ steps.localize.outputs.changed }}
+          PR_URL: ${{ steps.localize.outputs.pr-url }}
+        run: |
+          echo "result=$RESULT changed=$CHANGED pr=$PR_URL"
+          cat fake-openai.log || true

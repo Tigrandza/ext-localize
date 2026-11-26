@@ -1,0 +1,16 @@
+{
+  "name": "ext-localize-action",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GitHub Action for ext-localize. Composite action; the scripts have no dependencies.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\"",
+    "test:unit": "node --test test/gha.test.mjs test/stale.test.mjs test/report.test.mjs test/translate.test.mjs test/publish.test.mjs",
+    "test:e2e": "node --test test/e2e.test.mjs"
+  }
+}
