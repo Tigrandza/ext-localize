@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.3.1 (2026-11-27)
+
+### Changed
+
+- `translate` tells the model the store length limit of the messages the manifest uses as `name`, `short_name` and `description` (75 / 12 / 132 characters). In the first live Ollama run (qwen3:8b, 10 extensions, 3 languages), 7 of 60 names and summaries came back too long, because the model never saw the limit. A longer answer is still written; `check` warns as before. The source hash does not change, so nothing is re-translated.
 
 ### Fixed
 

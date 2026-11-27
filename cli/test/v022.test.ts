@@ -291,3 +291,28 @@ test("M1: a missing --manifest or config manifest is exit 2; the setting does no
   const none = JSON.parse((await capture(["check", "--dir", build, "--json"])).stdout);
   assert.match(none.issues[0].message, /^no manifest\.json in /);
 });
+
+// Live Ollama run on 10 real extensions (2026-11-27): 7 of 60 store names and summaries came back
+// over the 75 / 132 limits, because the model was never told the limit.
+test("translate tells the model the store limit for manifest name, short_name and description", async () => {
+  const dir = makeExtension({
+    "manifest.json": { manifest_version: 3, name: "__MSG_appName__", short_name: "__MSG_appShort__", description: "__MSG_appDesc__", version: "1", default_locale: "en" },
+    "_locales/en/messages.json": {
+      appName: { message: "Tab Saver", description: "Product name." },
+      appShort: { message: "Tab Saver!" },
+      appDesc: { message: "Save your tabs." },
+      other: { message: "Hello" },
+    },
+  });
+  const project = loadProject(dir);
+  const provider = new MockProvider();
+  await translateProject(project, loadState(dir), { targets: ["de"], provider });
+  const items = new Map(provider.calls.flatMap((c) => c.items).map((i) => [i.key, i.description ?? ""]));
+  assert.equal(items.get("appName"), "Product name. Maximum length: 75 characters.");
+  assert.equal(items.get("appShort"), "Maximum length: 12 characters.");
+  assert.equal(items.get("appDesc"), "Maximum length: 132 characters.");
+  assert.equal(items.get("other"), "");
+  // Only a hint: a longer answer is still written, and "check" warns about it.
+  const de = readJson(join(dir, "_locales/de/messages.json"));
+  assert.equal(de.appShort.message, "[de] Tab Saver!"); // 15 > 12
+});

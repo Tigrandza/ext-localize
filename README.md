@@ -46,6 +46,8 @@ cd action && npm test                    # Action tests, no dependencies
 
 No test calls a paid API. Provider calls go to fake local servers.
 
+Releases: when a GitHub release `v<version>` is published, [`publish.yml`](.github/workflows/publish.yml) runs the tests and publishes `cli/` to npm through npm trusted publishing (no stored token, with provenance).
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

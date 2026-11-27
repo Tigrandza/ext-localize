@@ -67,7 +67,7 @@ export interface CheckReport {
 export const KEY_RE = /^[A-Za-z0-9_@]+$/;
 
 /** Manifest fields with Chrome Web Store length limits. Warning level. */
-const MANIFEST_LIMITS: Record<string, number> = { name: 75, short_name: 12, description: 132 };
+export const MANIFEST_LIMITS: Record<string, number> = { name: 75, short_name: 12, description: 132 };
 
 /** Hebrew, Arabic (incl. Persian) script blocks and presentation forms. */
 const RTL_CHAR_RE = /[֐-׿؀-ۿݐ-ݿࢠ-ࣿיִ-﷿ﹰ-﻿]/;

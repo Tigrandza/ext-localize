@@ -1,0 +1,54 @@
+# Publishes cli/ to npm when a GitHub release is published (tag v<version>).
+# Uses npm trusted publishing (OIDC): no npm token is stored in this repository.
+# Set it up once on npmjs.com: ext-localize > Settings > Trusted publishing >
+# GitHub Actions, user "Tigrandza", repository "ext-localize", workflow "publish.yml",
+# and allow "npm publish".
+# Provenance is added automatically for a public repository.
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write # npm trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - name: Update npm
+        run: npm install -g npm@^11.5.1 && npm --version
+
+      - name: Tag matches cli/package.json version
+        working-directory: cli
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::Release tag $TAG does not match cli/package.json version $VERSION (expected v$VERSION)."
+            exit 1
+          fi
+
+      - name: Install, typecheck, test
+        working-directory: cli
+        run: |
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npm test
+
+      - name: Publish
+        working-directory: cli
+        run: npm publish --access public

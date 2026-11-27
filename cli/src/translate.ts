@@ -10,6 +10,7 @@ import type { BatchLimits, BatchRequest, Formality, Provider, TranslationItem } 
 import { OutputTruncatedError, ProviderError } from "./providers/types.ts";
 import type { LocalePlan, StateFile, StateSection } from "./state.ts";
 import { applyPlan, hashSource, hashTarget, planLocale, saveState, statePath } from "./state.ts";
+import { MANIFEST_LIMITS } from "./check.ts";
 import { localeFileRel, relPath } from "./paths.ts";
 
 /**
@@ -36,6 +37,8 @@ export interface TranslationJob {
   fixed?(locale: string): Record<string, string>;
   /** Max length in characters (code points) per key. A longer translation is not written. */
   maxLength?: Record<string, number>;
+  /** Length limit per key that is only told to the model (not enforced; "check" warns). */
+  lengthHint?: Record<string, number>;
 }
 
 export interface TranslateOptions {
@@ -194,7 +197,24 @@ export function messagesJob(project: Project): TranslationJob {
       writeJsonAtomic(messagesPath(project.localesDir, locale), file);
     },
     fileFor: (locale) => localeFileRel(project.root, locale),
+    lengthHint: manifestLengthHints(project.manifest),
   };
+}
+
+/**
+ * Store limits for the messages the manifest uses as name, short_name and description
+ * (75 / 12 / 132). Told to the model so a translation fits; "check" warns when one does not.
+ */
+export function manifestLengthHints(manifest: Record<string, unknown>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [field, max] of Object.entries(MANIFEST_LIMITS)) {
+    const value = manifest[field];
+    const ref = typeof value === "string" ? /^__MSG_([A-Za-z0-9_@]+)__$/.exec(value) : null;
+    if (!ref) continue;
+    const key = ref[1] as string;
+    out[key] = Math.min(out[key] ?? max, max);
+  }
+  return out;
 }
 
 /**
@@ -220,7 +240,7 @@ export async function runJob(job: TranslationJob, state: StateFile, opts: Transl
 
   const prepared = new Map<string, Protected>();
   for (const [key, msg] of Object.entries(source)) {
-    prepared.set(key, prepareItem(key, msg, glossary, { formatTokens: job.formatTokens, maxLength: job.maxLength?.[key] }));
+    prepared.set(key, prepareItem(key, msg, glossary, { formatTokens: job.formatTokens, maxLength: job.maxLength?.[key] ?? job.lengthHint?.[key] }));
   }
 
   const results: LocaleResult[] = [];
