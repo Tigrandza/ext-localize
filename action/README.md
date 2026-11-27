@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: Tigrandza/ext-localize/action@v0.3.0
+      - uses: Tigrandza/ext-localize/action@v0.3.1
         with:
           path: .          # folder with manifest.json
           stale: fail      # or "warn" while you catch up
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: Tigrandza/ext-localize/action@v0.3.0
+      - uses: Tigrandza/ext-localize/action@v0.3.1
         with:
           cli-source: bundled   # until ext-localize is on npm
           mode: translate
@@ -83,7 +83,7 @@ Before the first run:
 
 1. Add the provider key as a repository secret (Settings > Secrets and variables > Actions). In the example it is `DEEPL_API_KEY`.
 2. Turn on the required setting below.
-3. Pin the Action to a release tag (`@v0.3.0`) or, safer, to a full commit SHA.
+3. Pin the Action to a release tag (`@v0.3.1`) or, safer, to a full commit SHA.
 
 > **Required setting.** Settings > Actions > General > Workflow permissions > "Allow GitHub Actions to create and approve pull requests". It is **off by default**. While it is off, the Action pushes the branch `ext-localize/translations` and then GitHub refuses the PR (`GitHub Actions is not permitted to create or approve pull requests`). The job then fails with `result: pr-blocked` and an error that names the branch and this setting. Your translations are safe on that branch: turn the setting on and run the workflow again, or open the PR by hand. For a repository in an organization, the organization's own Actions settings may also block it, and an organization owner has to allow it there first.
 
@@ -115,7 +115,7 @@ What happens on each run:
 | `pr-title` | translate | `Update translations (ext-localize)` | |
 | `github-token` | translate | `github.token` | Token for `gh` (see below) |
 | `cli-source` | both | `npm` | `npm`, `bundled`, or a path to a copy of the CLI. See [Where the CLI comes from](#where-the-cli-comes-from) |
-| `cli-version` | both | `0.3.0` | npm version when `cli-source` is `npm`. Needs 0.2.0 or newer; 0.2.1 fixes the garbled clipboard copy, 0.3.0 adds `--locales-dir` and `--manifest` |
+| `cli-version` | both | `0.3.1` | npm version when `cli-source` is `npm`. Needs 0.2.0 or newer; 0.2.1 fixes the garbled clipboard copy, 0.3.0 adds `--locales-dir` and `--manifest`, 0.3.1 tells the model the store length limits |
 | `node-version` | both | `24` | Set up this Node version. Empty: use the runner's Node. Note: `actions/setup-node` changes Node for the **rest of the job** too, not only this step. Set `""` if your later steps need another version |
 
 "config" means `.localizer/config.json` in the extension folder. Inputs win over the config file.
@@ -186,7 +186,7 @@ The cost: composite actions have no `post:` step, and inputs must be passed by h
 Example, to run the CLI from the same commit as the Action:
 
 ```yaml
-      - uses: Tigrandza/ext-localize/action@v0.3.0
+      - uses: Tigrandza/ext-localize/action@v0.3.1
         with:
           cli-source: bundled
 ```
@@ -218,7 +218,7 @@ The test helper removes every `*_API_KEY` variable from the environment, so a re
 
 - **Real GitHub runs: one repo only.** On 17 November 2026 a self-test workflow in a private repo ran check mode (passed) and translate mode with `cli-source: bundled`. Translate first hit the "not permitted to create or approve pull requests" error. After the setting was turned on, it opened a correct PR. The new `pr-blocked` message itself has only run in the local tests (with a fake `gh` that returns that error). As far as I know, these were not tried on GitHub yet: an organization repo, `listing: true`, updating an open PR, and `schedule` events.
 - **`actionlint` was not run.** It is not installed on this machine. `action.yml` and the examples were parsed with Ruby's YAML parser, and a script checked that every input is wired through.
-- **`cli-source: npm`** (the default) is checked on GitHub-hosted runners by the self-test workflow with the published package (0.3.0). Not tried on self-hosted runners.
+- **`cli-source: npm`** (the default) is checked on GitHub-hosted runners by the self-test workflow with the published package (0.3.1). Not tried on self-hosted runners.
 - **`cli-source: bundled`** is verified on a GitHub-hosted runner (see above). Not tried on self-hosted runners, or with no access to the npm registry.
 - **Windows runners** are not supported: the step uses `bash`, and the tests use Unix paths.
 - **Forgejo or Gitea Actions:** probably not. `gh` only talks to GitHub.

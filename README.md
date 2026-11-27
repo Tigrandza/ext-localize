@@ -33,7 +33,7 @@ The full guide, every option and the store delivery steps are in [`cli/README.md
 
 ## Status
 
-- `ext-localize` 0.3.0 is on npm and is tested on Node 20, 22 and 24. See the [changelog](cli/CHANGELOG.md).
+- `ext-localize` 0.3.1 is on npm and is tested on Node 20, 22 and 24. See the [changelog](cli/CHANGELOG.md).
 - Firefox delivery uses the official AMO API. Chrome has no API for listing text, so the default is a script you paste into the dashboard yourself. A fully automatic Chrome mode exists behind `--auto`, marked **experimental**: Google has not said whether it is allowed, and your publisher account is what is at risk. Read the warning in the CLI README before you use it.
 - Screenshots in other languages are not done yet.
 

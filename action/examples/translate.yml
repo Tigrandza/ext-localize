@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: Tigrandza/ext-localize/action@v0.3.0
+      - uses: Tigrandza/ext-localize/action@v0.3.1
         with:
           cli-source: bundled   # until ext-localize is on npm; then remove this line
           mode: translate
