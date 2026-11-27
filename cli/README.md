@@ -603,7 +603,7 @@ The Chrome tests run the paste script and `--auto` against a local mock of the d
 ## Not done yet
 
 - Tested live with DeepL and with Ollama (qwen3:8b on macOS, 10 small extensions into es, de and ja, 0 errors), only for `_locales` messages. The Anthropic and OpenAI providers are covered by unit tests with mocks, but have not been run against the real APIs yet. Listing translation (long descriptions, line-by-line DeepL) has only run against mocks.
-- `push firefox --send` has never sent a real PATCH. The request shape comes from AMO's docs, source code and tests; the first real run should be on a test add-on.
+- `push firefox --send` has run once against the real AMO (27 November 2026, an unlisted test add-on): HTTP 200, name, summary and description saved in 6 AMO locales, with `es_419` copied to `es-AR`, `es-CL` and `es-MX`. Not yet tried on a listed add-on, where name and summary changes go to content review.
 - `push chrome --auto` in this CLI has only run against the local mock. The code is a port of the spike that worked on a real test item. Google has not answered whether it is allowed, so it stays experimental.
 - The paste script is the spike's fixed version that worked on the real dashboard (16 languages, matched by language code); a later dashboard change can break it, and it fails loudly when it does.
 - No screenshots: per-language store images are not handled.
