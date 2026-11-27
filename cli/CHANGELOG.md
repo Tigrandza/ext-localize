@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `check --zip` and `push chrome --zip` no longer warn "there is no listing/<locale>.json" for every locale when the project has no listing folder at all. Same rule as `check`: no listing folder, no listing issues. (Found while building the Plasmo example.)
+- README: a code block in the WXT/Plasmo section was not closed, so the rest of the section showed as code on npm and GitHub.
+
+### Added
+
+- `examples/wxt` and `examples/plasmo`: small extensions with the manifest stub, `locales.dir` config and a translated locale. Both were built (WXT 0.21.5, Plasmo 0.90.5) and loaded in Chromium. A test keeps their configs and stubs in sync.
+
 ## 0.3.0 (2026-11-26)
 
 The remaining items from the first field report (PageCarry, 32 locales).

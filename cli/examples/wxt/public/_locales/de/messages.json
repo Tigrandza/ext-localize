@@ -1,0 +1,10 @@
+{
+  "extName": { "message": "Tab Saver", "description": "Extension name. Keep \"Tab Saver\" in English." },
+  "extDescription": { "message": "Speichere deine offenen Tabs und stelle sie später mit einem Klick wieder her.", "description": "Store summary, at most 132 characters." },
+  "actionTitle": { "message": "Tabs speichern", "description": "Tooltip of the toolbar button." },
+  "savedTabs": {
+    "message": "$COUNT$ Tabs gespeichert",
+    "description": "Popup status line after saving.",
+    "placeholders": { "count": { "content": "$1", "example": "3" } }
+  }
+}

@@ -537,7 +537,11 @@ With `"locales": { "dir": "public/_locales" }` in that config file the flag is n
 
 ```json
 { "manifest_version": 3, "name": "__MSG_extName__", "description": "__MSG_extDescription__", "version": "0", "default_locale": "en" }
-``` `push chrome --zip` and `check --zip` compare with the package you upload, not with `--locales-dir`.
+```
+
+`push chrome --zip` and `check --zip` compare with the package you upload, not with `--locales-dir`. Without a listing folder, `--zip` has nothing to compare and reports nothing.
+
+Working examples for both frameworks, built and loaded in Chromium, are in [`examples/`](https://github.com/Tigrandza/ext-localize/tree/main/cli/examples): WXT (`public/_locales`; WXT takes the toolbar tooltip from the popup's `<title>`, so write `<title>__MSG_actionTitle__</title>` there) and Plasmo (`locales/`, copied to `_locales` by the build).
 
 ```json
 {

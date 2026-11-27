@@ -1,6 +1,6 @@
 // Fixes and features from the PageCarry field report (0.2.1).
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -292,4 +292,15 @@ test("M4: --zip compares listing files with the package's _locales", async () =>
   assert.match(push.stdout, /warn {3}de: listing: the package/);
   writeFileSync(join(dir, "bad.zip"), "not a zip");
   assert.equal((await capture(["check", "--dir", dir, "--zip", join(dir, "bad.zip")])).code, 2);
+});
+
+test("--zip without a listing folder: no listing issues (WXT/Plasmo projects that do not use listing/)", async () => {
+  const dir = copyFixture();
+  rmSync(join(dir, "listing"), { recursive: true, force: true });
+  const zip = join(mkdtempSync(join(tmpdir(), "ext-localize-zip-")), "pkg.zip");
+  makeZip(zip, ["manifest.json", "_locales/en/messages.json", "_locales/fr/messages.json"]);
+  const r = JSON.parse((await capture(["check", "--dir", dir, "--json", "--zip", zip])).stdout);
+  assert.deepEqual(r.issues.filter((i: { key?: string }) => i.key?.startsWith("listing.")), []);
+  writeFileSync(join(dir, "bad.zip"), "not a zip");
+  assert.equal((await capture(["check", "--dir", dir, "--zip", join(dir, "bad.zip")])).code, 2, "a bad zip is still an error");
 });
