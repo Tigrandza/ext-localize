@@ -1,0 +1,4 @@
+{
+  "manifest": ".localizer/manifest.json",
+  "locales": { "dir": "locales" }
+}

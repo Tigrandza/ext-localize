@@ -52,6 +52,9 @@ export function zipLocales(path: string): string[] {
  */
 export function zipIssues(zipPath: string, listingDirAbs: string, listingRel: string, defaultLocale: string | null): Issue[] {
   const inZip = new Set(zipLocales(zipPath));
+  // No listing folder: the project does not manage its listing with this tool, so
+  // there is nothing to compare (same rule as "check": no listing/, no listing issues).
+  if (!existsSync(listingDirAbs)) return [];
   const listing = listListingLocales(listingDirAbs);
   const issues: Issue[] = [];
   for (const locale of listing) {
