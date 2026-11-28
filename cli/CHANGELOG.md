@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 (2026-11-27)
+
+### Changed
+
+- **A translation over its length limit is sent back to be shortened.** With an LLM provider (Anthropic, OpenAI, Ollama), a store listing field or a manifest `name` / `short_name` / `description` message that comes back longer than its limit is sent back to the model with the long text, its length and the limit, and a request to shorten it. Up to 3 tries; each try starts from the shortest answer so far. A shorter answer must keep every placeholder and glossary marker, or it is ignored. If it still does not fit, the result is the same as before: a listing field is not written and is listed as failed (the error now says "still too long after 3 shorten requests"); a manifest message is written and `check` warns. The request also says how many characters to cut at least and aims 10% under the limit, since models miscount. The log line shows `N shortened`; a manifest message that is still too long gets its own log line, and every "still too long" message lists the length of each shorten answer (or "broken" / "no answer"). When one string is asked and the model answers it under another key (seen with qwen3:8b), the answer is used. DeepL cannot shorten, so nothing changes there. Why: in the live Ollama run (qwen3:8b, 2026-11-27), even with the limit in the prompt, German and Spanish names and summaries of two extensions came back 93-175 characters for limits of 75 / 132.
+- A listing field that is too long is no longer re-sent once with the same prompt before failing (when the provider can shorten); the shorten request replaces that retry.
+
 ## 0.3.1 (2026-11-27)
 
 ### Changed

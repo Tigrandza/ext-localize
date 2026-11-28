@@ -2,7 +2,7 @@ import { cpSync, mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { BatchRequest, Provider } from "../src/providers/types.ts";
+import type { BatchRequest, Provider, TranslationItem } from "../src/providers/types.ts";
 import { OutputTruncatedError } from "../src/providers/types.ts";
 
 export const FIXTURE = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "sample-extension");
@@ -39,6 +39,11 @@ export interface MockOptions {
   /** Return an error to throw for a call (callIndex starts at 0). */
   throwFor?: (req: BatchRequest, callIndex: number) => unknown;
   maxItems?: number;
+  /**
+   * Answer for a "shorten" request (item.shorten holds the long text and the limit).
+   * Setting it makes the mock an LLM-like provider (canShorten). undefined leaves the key out.
+   */
+  shorten?: (item: TranslationItem, req: BatchRequest) => string | undefined;
 }
 
 /** Fake translator: "[de] " + text, markers untouched. Records every call. */
@@ -46,12 +51,14 @@ export class MockProvider implements Provider {
   readonly name = "mock";
   readonly label = "mock/test";
   readonly limits: { maxItems: number; maxChars: number };
+  readonly canShorten: boolean;
   calls: BatchRequest[] = [];
   private brokenOnce = new Set<string>();
   private readonly opts: MockOptions;
   constructor(opts: MockOptions = {}) {
     this.opts = opts;
     this.limits = { maxItems: opts.maxItems ?? 10, maxChars: 100000 };
+    this.canShorten = opts.shorten !== undefined;
   }
   async translateBatch(req: BatchRequest): Promise<Record<string, string>> {
     this.calls.push(req);
@@ -60,6 +67,13 @@ export class MockProvider implements Provider {
     if (this.opts.failLocales?.has(req.targetLocale)) throw new Error(`mock failure for ${req.targetLocale}`);
     if (this.opts.truncateAbove !== undefined && req.items.length > this.opts.truncateAbove) throw new OutputTruncatedError();
     const out: Record<string, string> = {};
+    if (req.kind === "shorten") {
+      for (const item of req.items) {
+        const text = this.opts.shorten?.(item, req);
+        if (text !== undefined) out[item.key] = text;
+      }
+      return out;
+    }
     for (const item of req.items) {
       if (this.opts.omitKeys?.has(item.key)) continue;
       let text = `[${req.targetLocale}] ${item.text}`;

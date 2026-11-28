@@ -23,6 +23,7 @@ export class OllamaProvider implements Provider {
   readonly name = "ollama";
   readonly label: string;
   readonly limits: BatchLimits = { maxItems: 15, maxChars: 3000 };
+  readonly canShorten = true;
   private readonly model: string;
   private readonly host: string;
 

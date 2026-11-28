@@ -1,6 +1,6 @@
 {
   "name": "ext-localize",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Local-first CLI to translate, validate and deliver Chrome (MV3) extension _locales and store listings (Chrome, Firefox, Edge).",
   "repository": {
     "type": "git",

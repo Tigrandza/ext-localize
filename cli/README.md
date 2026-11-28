@@ -240,7 +240,7 @@ API keys are read from environment variables only. They are never written to dis
 | `deepl` | `DEEPL_API_KEY` | Keys ending in `:fx` use the free API host. For listing text, each line is sent as its own text (in XML mode DeepL does not treat a line break as a sentence end, so list items could merge); blank lines and indentation are kept locally. UI messages are sent whole. Supported languages are read from DeepL, and unsupported locales are skipped with a note (for example `am` and `kn` today; `--dry-run` does not know this yet and counts them). DeepL has one `context` per request, so descriptions are sent there only as loose background, each quoted with its source text. Supports `--formality` and glossary `terms` (see below). |
 | `ollama` | none | Local model, nothing leaves your machine. Pass `--model` (see `ollama list`). `OLLAMA_HOST` defaults to `http://localhost:11434`. Smaller batches. |
 
-**What is sent:** the message text (with placeholders replaced by markers), its `description`, notes about what each placeholder means (with the `example`), the store length limit for the messages your manifest uses as `name`, `short_name` and `description` (75 / 12 / 132 characters; a longer answer is still written, and `check` warns), and the glossary terms for that locale. Nothing else from your extension is sent.
+**What is sent:** the message text (with placeholders replaced by markers), its `description`, notes about what each placeholder means (with the `example`), the store length limit for the messages your manifest uses as `name`, `short_name` and `description` (75 / 12 / 132 characters; with an LLM provider, a longer answer is sent back up to 3 times with a request to shorten it; if it is still too long, it is written anyway and `check` warns), and the glossary terms for that locale. Nothing else from your extension is sent.
 
 **Batching and retries:** many keys go in one request (40 for LLMs, 50 for DeepL, 15 for Ollama). Rate limits (HTTP 429) and server errors are retried with backoff, and `Retry-After` is respected. If an answer is cut off, the batch is split in two and sent again. Keys that come back missing or with broken placeholders are re-sent one by one; if they still fail, they are not written and are listed in the output. A request that fails on the network or HTTP level (after retries) is not re-sent key by key. The run stops at once on an auth error (401/403), a wrong model or URL (404) or DeepL quota (456), and after 3 failed requests in a row. Finished locales are kept.
 
@@ -401,7 +401,7 @@ So run `translate` (messages) first, then `translate --listing`.
 
 - `$` has no meaning in listing text. `$4.99` is plain text, and a hand edit like `4,99 €` is kept (not marked broken). Glossary `keep` terms are still protected.
 - LLMs get a listing prompt (keep paragraphs, line breaks and list markers; natural marketing text; no added claims) and the length limit of each field.
-- A translation longer than the limit of your stores is not written; it is listed as failed.
+- A translation longer than the limit of your stores is sent back to the model (LLM providers, up to 3 times) with its length and the limit and a request to shorten it. If it still does not fit, it is not written and is listed as failed. DeepL cannot shorten, so with DeepL it fails at once.
 - A description too long for one model answer fails for that locale only and does not stop the run.
 
 ### Listing checks

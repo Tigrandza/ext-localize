@@ -6,6 +6,11 @@ export interface TranslationItem {
   description?: string;
   /** What each marker stands for, e.g. `<x id="0"/> = $count$ (example: "3")`. */
   markerHints?: string[];
+  /**
+   * Set on a "shorten" request: the earlier translation (with markers) that was
+   * over the limit, its length and the limit, all in characters (code points).
+   */
+  shorten?: { previous: string; length: number; max: number };
 }
 
 /** DeepL's formality values. LLM providers get them as a tone instruction. */
@@ -19,8 +24,11 @@ export interface LocaleRequest {
   /** Fixed glossary translations for this locale: [term, translation]. */
   terms: [string, string][];
   formality?: Formality;
-  /** What is translated: UI messages (default) or store listing text. Changes the instructions. */
-  kind?: "messages" | "listing";
+  /**
+   * What is translated: UI messages (default) or store listing text. Changes the instructions.
+   * "shorten": every item carries `shorten`; the model rewrites a too-long translation shorter.
+   */
+  kind?: "messages" | "listing" | "shorten";
 }
 
 export interface BatchRequest extends LocaleRequest {
@@ -40,6 +48,11 @@ export interface Provider {
   /** Recorded in state.json as "by", e.g. "anthropic/claude-opus-5-5". */
   readonly label: string;
   readonly limits: BatchLimits;
+  /**
+   * true: the provider follows instructions (an LLM), so a translation over its length
+   * limit can be sent back with kind "shorten". DeepL cannot do this.
+   */
+  readonly canShorten?: boolean;
   /** Optional: return false for locales the provider cannot translate into. */
   supportsLocale?(locale: string): Promise<boolean>;
   /**

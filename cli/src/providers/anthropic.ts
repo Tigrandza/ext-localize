@@ -29,6 +29,7 @@ export class AnthropicProvider implements Provider {
   readonly name = "anthropic";
   readonly label: string;
   readonly limits = LLM_LIMITS;
+  readonly canShorten = true;
   private readonly model: string;
   private readonly effort: Effort;
   private client: Anthropic | undefined;

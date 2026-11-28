@@ -19,6 +19,7 @@ export class OpenAIProvider implements Provider {
   readonly name = "openai";
   readonly label: string;
   readonly limits = LLM_LIMITS;
+  readonly canShorten = true;
   private readonly model: string;
   private readonly baseUrl: string;
   private readonly apiKey: string | undefined;

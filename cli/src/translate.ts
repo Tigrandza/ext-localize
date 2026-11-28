@@ -157,6 +157,14 @@ async function pool<T>(items: T[], limit: number, fn: (item: T) => Promise<void>
   await Promise.all(workers);
 }
 
+/**
+ * How many times a translation over its length limit is sent back to the model
+ * with a "make it shorter" request (LLM providers only). After that the long text
+ * is reported as before: a listing field fails, a manifest message is written and
+ * "check" warns.
+ */
+export const SHORTEN_ATTEMPTS = 3;
+
 /** Stop the whole run after this many failed requests in a row (bad key, network down, wrong model). */
 export const MAX_FAILURES_IN_ROW = 3;
 
@@ -322,6 +330,79 @@ export async function runJob(job: TranslationJob, state: StateFile, opts: Transl
     const counter = { requests: 0 };
     const good: Record<string, string> = {};
     const errors = new Map<string, string>();
+    // Translations over their length limit: key -> the answer with markers and its length.
+    const tooLong = new Map<string, { raw: string; length: number }>();
+
+    /**
+     * Send translations that are over their limit back to the model, up to SHORTEN_ATTEMPTS
+     * times. A shorter answer that fits replaces the long one. Returns the keys that now fit.
+     */
+    const shortenTooLong = async (loc: string, pending: Map<string, { raw: string; length: number }>): Promise<string[]> => {
+      const done: string[] = [];
+      let attempts = 0;
+      // What each shorten answer was, per key, for the report: a length, or why it was not used.
+      const answers = new Map<string, string[]>();
+      const note = (key: string, what: string) => answers.set(key, [...(answers.get(key) ?? []), what]);
+      const limitOf = (key: string) => (job.maxLength?.[key] ?? job.lengthHint?.[key]) as number;
+      while (pending.size && attempts < SHORTEN_ATTEMPTS && !ctx.fatal) {
+        attempts++;
+        const reqItems: TranslationItem[] = [...pending].map(([key, prev]) => ({
+          ...(prepared.get(key) as Protected).item,
+          shorten: { previous: prev.raw, length: prev.length, max: limitOf(key) },
+        }));
+        for (const batch of makeBatches(reqItems, limits)) {
+          if (ctx.fatal) break;
+          let out: Record<string, string>;
+          try {
+            out = await runBatch(provider, { ...base, kind: "shorten" }, batch, counter);
+            ctx.failuresInRow = 0;
+          } catch (e) {
+            if (classifyError(e) === "fatal") ctx.fatal = e as Error;
+            log(`${loc}: shorten request failed: ${(e as Error).message}`);
+            continue;
+          }
+          for (const i of batch) {
+            const raw = out[i.key];
+            if (raw === undefined) {
+              const got = Object.keys(out);
+              note(i.key, got.length ? `no answer (got ${got.join(" ")})` : "no answer");
+              continue;
+            }
+            const p = prepared.get(i.key) as Protected;
+            const v = restoreAndVerify(p.source, raw, p.originals, { checkFormat });
+            if (!v.ok) {
+              note(i.key, "broken"); // keep the earlier one
+              continue;
+            }
+            const length = [...v.text].length;
+            note(i.key, String(length));
+            const prev = pending.get(i.key) as { raw: string; length: number };
+            if (length > prev.length) continue;
+            const enforced = job.maxLength?.[i.key] !== undefined;
+            if (length <= limitOf(i.key)) {
+              pending.delete(i.key);
+              done.push(i.key);
+              good[i.key] = v.text;
+              errors.delete(i.key);
+            } else {
+              pending.set(i.key, { raw, length });
+              // A hint-only key is written anyway, so keep the shorter text.
+              if (!enforced) good[i.key] = v.text;
+            }
+          }
+        }
+      }
+      for (const [key, prev] of pending) {
+        const tried = answers.get(key);
+        const asked = attempts
+          ? `; still too long after ${attempts} shorten request${attempts === 1 ? "" : "s"}` + (tried?.length ? ` (answers: ${tried.join(", ")})` : "")
+          : "";
+        if (job.maxLength?.[key] !== undefined) errors.set(key, `too long: ${prev.length} characters, limit ${limitOf(key)}${asked}`);
+        // A hint-only key is written anyway; say so here, not only in "check".
+        else log(`${loc} > ${key}: written with ${prev.length} characters, limit ${limitOf(key)}${asked}`);
+      }
+      return done;
+    };
 
     // Pass 1 sends the batches. Pass 2 re-sends, one by one, only the keys that
     // came back missing or broken (or whose batch had an unusable answer).
@@ -362,11 +443,22 @@ export async function runJob(job: TranslationJob, state: StateFile, opts: Transl
           let v = raw === undefined ? { ok: false as const, error: "no translation returned" } : restoreAndVerify(p.source, raw, p.originals, { checkFormat });
           const max = job.maxLength?.[i.key];
           if (v.ok && max !== undefined && [...v.text].length > max) {
-            v = { ok: false as const, error: `too long: ${[...v.text].length} characters, limit ${max}` };
+            const length = [...v.text].length;
+            v = { ok: false as const, error: `too long: ${length} characters, limit ${max}` };
+            if (provider.canShorten) {
+              // Asking again with the same prompt rarely helps; a shorten request follows below.
+              tooLong.set(i.key, { raw: raw as string, length });
+              errors.set(i.key, v.error);
+              continue;
+            }
           }
           if (v.ok) {
             good[i.key] = v.text;
             errors.delete(i.key);
+            tooLong.delete(i.key);
+            const hint = job.lengthHint?.[i.key];
+            const length = [...v.text].length;
+            if (provider.canShorten && hint !== undefined && length > hint) tooLong.set(i.key, { raw: raw as string, length });
           } else {
             errors.set(i.key, v.error);
             if (pass === 0) nextRetry.push(i);
@@ -376,6 +468,7 @@ export async function runJob(job: TranslationJob, state: StateFile, opts: Transl
       retryOne = nextRetry;
       if (!retryOne.length) break;
     }
+    const shortened = await shortenTooLong(locale, tooLong);
     result.failed = items.filter((i) => good[i.key] === undefined).map((i) => ({ key: i.key, error: errors.get(i.key) ?? "failed" }));
     result.requests = counter.requests;
     result.translated = Object.keys(good);
@@ -397,6 +490,7 @@ export async function runJob(job: TranslationJob, state: StateFile, opts: Transl
     if (saveState(job.root, state)) stateWritten = true;
     log(
       `${locale}: ${result.translated.length} translated, ${plan.remove.length} removed, ${plan.keep.length} kept` +
+        (shortened.length ? `, ${shortened.length} shortened` : "") +
         (result.failed.length ? `, ${result.failed.length} FAILED` : "") +
         ` (${result.requests} request${result.requests === 1 ? "" : "s"})`,
     );
